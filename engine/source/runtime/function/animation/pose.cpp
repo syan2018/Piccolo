@@ -61,14 +61,40 @@ void AnimationPose::blend(const AnimationPose& pose)
         auto&       bone_trans_one = m_bone_poses[i];
         const auto& bone_trans_two = pose.m_bone_poses[i];
 
-        // float sum_weight =
-        // if (sum_weight != 0)
+        float sum_weight = 
+            m_weight.m_blend_weight[i] + pose.m_weight.m_blend_weight[i];
+        
+        if (sum_weight != 0)
         {
-            // float cur_weight =
-            // m_weight.m_blend_weight[i] =
-            // bone_trans_one.m_position  =
-            // bone_trans_one.m_scale     =
-            // bone_trans_one.m_rotation  =
+            // 缓存原权重
+            float cur_weight = m_weight.m_blend_weight[i];
+
+            // 按权重比例计算混合权重
+            float lerp_weight = cur_weight / sum_weight;
+
+            // 对权重进行积累（因为会对Pose[0]进行多次blend
+            m_weight.m_blend_weight[i] = sum_weight;
+
+
+            // Lerp...反了
+            bone_trans_one.m_position  = Vector3::lerp(
+                bone_trans_two.m_position, 
+                bone_trans_one.m_position,
+                lerp_weight
+            );
+
+            bone_trans_one.m_scale     = Vector3::lerp(
+                bone_trans_two.m_scale, 
+                bone_trans_one.m_scale,
+                lerp_weight
+            );
+
+            bone_trans_one.m_rotation  = Quaternion::nLerp(
+                lerp_weight,
+                bone_trans_two.m_rotation, 
+                bone_trans_one.m_rotation,
+                true
+            );
         }
     }
 }

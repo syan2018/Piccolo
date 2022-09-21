@@ -149,6 +149,7 @@ namespace Pilot
         m_skeleton.applyPose(pose);
         m_animation_result = m_skeleton.outputAnimationResult();
     }
+
     void AnimationComponent::blend(float desired_ratio, BlendState* blend_state)
     {
 
@@ -156,7 +157,10 @@ namespace Pilot
         {
             ratio = desired_ratio;
         }
-        auto                       blendStateData = AnimationManager::getBlendStateWithClipData(*blend_state);
+
+        auto blendStateData = AnimationManager::getBlendStateWithClipData(*blend_state);
+
+        
         std::vector<AnimationPose> poses;
         for (int i = 0; i < blendStateData.m_clip_count; i++)
         {
@@ -169,12 +173,17 @@ namespace Pilot
             m_skeleton.extractPose(pose);
             poses.push_back(pose);
         }
+
+        // 对于每个Pose
         for (int i = 1; i < blendStateData.m_clip_count; i++)
         {
+            // 对于该Pose的每帧
             for (auto& pose : poses[i].m_weight.m_blend_weight)
             {
+                // 将每帧的混合权重赋值为这个Pose的混合权重
                 pose = blend_state->m_blend_weight[i];
             }
+            // Pose按后续每帧的混合权重
             poses[0].blend(poses[i]);
         }
 
