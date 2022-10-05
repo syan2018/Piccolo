@@ -47,14 +47,17 @@ namespace Piccolo
         }
     }
 
-    void MotorComponent::tick(float delta_time) { tickPlayerMotor(delta_time); }
+    void MotorComponent::tick(float delta_time)
+    {
+        tickPlayerMotor(delta_time);
+    }
 
     void MotorComponent::tickPlayerMotor(float delta_time)
     {
         if (!m_parent_object.lock())
             return;
 
-        std::shared_ptr<Level> current_level = g_runtime_global_context.m_world_manager->getCurrentActiveLevel().lock();
+        std::shared_ptr<Level>     current_level     = g_runtime_global_context.m_world_manager->getCurrentActiveLevel().lock();
         std::shared_ptr<Character> current_character = current_level->getCurrentActiveCharacter().lock();
         if (current_character == nullptr)
             return;
@@ -79,6 +82,14 @@ namespace Piccolo
         calculateTargetPosition(transform_component->getPosition());
 
         transform_component->setPosition(m_target_position);
+
+        AnimationComponent* animation_component =
+            m_parent_object.lock()->tryGetComponent<AnimationComponent>("AnimationComponent");
+        if (animation_component != nullptr)
+        {
+            animation_component->updateSignal("speed", m_target_position.distance(transform_component->getPosition()) / delta_time);
+            animation_component->updateSignal("jumping", m_jump_state != JumpState::idle);
+        }
     }
 
     void MotorComponent::calculatedDesiredHorizontalMoveSpeed(unsigned int command, float delta_time)
@@ -126,13 +137,18 @@ namespace Piccolo
 
         const float gravity = physics_scene->getGravity().length();
 
+        if (m_jump_state == JumpState::idle && m_controller->isTouchGround() == false)
+        {
+            m_jump_state = JumpState::falling;
+        }
+
         if (m_jump_state == JumpState::idle)
         {
             if ((unsigned int)GameCommand::jump & command)
             {
-                m_jump_state                  = JumpState::rising;
-                m_vertical_move_speed         = Math::sqrt(m_motor_res.m_jump_height * 2 * gravity);
-                m_jump_horizontal_speed_ratio = m_move_speed_ratio;
+                m_jump_state                    = JumpState::rising;
+                m_vertical_move_speed           = Math::sqrt(m_motor_res.m_jump_height * 2 * gravity);
+                m_jump_horizontal_speed_ratio   = m_move_speed_ratio;
             }
             else
             {
@@ -211,11 +227,9 @@ namespace Piccolo
                 break;
         }
 
-        // Piccolo-hack: motor level simulating jump, character always above z-plane
-        if (m_jump_state == JumpState::falling && final_position.z + m_desired_displacement.z <= 0.f)
+        if (m_jump_state == JumpState::falling && m_controller->isTouchGround())
         {
-            final_position.z = 0.f;
-            m_jump_state     = JumpState::idle;
+            m_jump_state = JumpState::idle;
         }
 
         m_is_moving       = (final_position - current_position).squaredLength() > 0.f;
