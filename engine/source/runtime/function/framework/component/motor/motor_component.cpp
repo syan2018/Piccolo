@@ -1,5 +1,6 @@
 #include "runtime/function/framework/component/motor/motor_component.h"
 
+
 #include "runtime/core/base/macro.h"
 
 #include "runtime/function/character/character.h"
@@ -13,6 +14,8 @@
 #include "runtime/function/global/global_context.h"
 #include "runtime/function/input/input_system.h"
 #include "runtime/function/physics/physics_scene.h"
+
+#include "runtime/function/framework/component/motor/motor_climb.h"
 
 namespace Piccolo
 {
@@ -90,6 +93,9 @@ namespace Piccolo
             animation_component->updateSignal("speed", m_target_position.distance(transform_component->getPosition()) / delta_time);
             animation_component->updateSignal("jumping", m_jump_state != JumpState::idle);
         }
+
+        MotorClimb::SetClimbZ(m_climb_z);
+        
     }
 
     void MotorComponent::calculatedDesiredHorizontalMoveSpeed(unsigned int command, float delta_time)

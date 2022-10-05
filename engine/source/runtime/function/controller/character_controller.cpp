@@ -7,6 +7,8 @@
 #include "runtime/function/global/global_context.h"
 #include "runtime/function/physics/physics_scene.h"
 
+#include "runtime/function/framework/component/motor/motor_climb.h"
+
 namespace Piccolo
 {
     CharacterController::CharacterController(const Capsule& capsule) : m_capsule(capsule)
@@ -112,14 +114,21 @@ namespace Piccolo
 
             Piccolo::PhysicsHitInfo hitInfo = hits[0];
 
-            // final_position += hitInfo.hit_distance * horizontal_direction;
+            // 如果碰撞位置低于翻越Z，则保持移动并抬高
+            if (hitInfo.hit_position.z < MotorClimb::GetClimbZ())
+            {
+                final_position += horizontal_displacement;
+                final_position += Vector3::UNIT_Z * hitInfo.hit_position.z;
 
-            final_position += 
-                horizontal_displacement.length() 
-                * (horizontal_direction - hitInfo.hit_normal);
-         
-            
-
+                m_is_touch_ground = true;
+            }
+            else
+            {
+                // 朝无碰撞方向前进
+                final_position += 
+                    horizontal_displacement.length() 
+                    * (horizontal_direction - hitInfo.hit_normal);
+            }
 
         }
         else
@@ -127,12 +136,6 @@ namespace Piccolo
             final_position += horizontal_displacement;
         }
 
-        Transform final_transform = Transform(final_position, Quaternion::IDENTITY, Vector3::UNIT_SCALE);
-
-        if (physics_scene->isOverlap(m_rigidbody_shape, final_transform.getMatrix()))
-        {
-            // final_position = current_position;
-        }
 
         return final_position;
     }

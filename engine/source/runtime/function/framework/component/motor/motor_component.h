@@ -49,6 +49,10 @@ namespace Piccolo
         META(Enable)
         MotorComponentRes m_motor_res;
 
+        // 添加爬坡高度控制参数
+        META(Enable)
+        float m_climb_z {0.f};
+
         float m_move_speed_ratio {0.f};
         float m_vertical_move_speed {0.f};
         float m_jump_horizontal_speed_ratio {0.f};
